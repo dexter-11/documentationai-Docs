@@ -4,4 +4,207 @@ description: sadfsdcsadc
 ---
 
 
-/
+# Client-side Reflected XSS (DOM-based)
+
+### <mark style="color:purple;">Resources</mark>
+
+* [https://github.com/Sivnerof/Sources-And-Sinks-Cheatsheet](https://github.com/Sivnerof/Sources-And-Sinks-Cheatsheet)\\
+* [https://github.com/dexter-11/Flasky/tree/main/XSS](https://github.com/dexter-11/Flasky/tree/main/XSS)
+
+
+
+
+
+***
+
+<figure><img src="../../../.gitbook/assets/image (3) (1).png" alt=""><figcaption></figcaption></figure>
+
+## <mark style="color:$info;">**What is**</mark>**&#x20;**<mark style="color:$danger;">**DOM-based Reflected**</mark>**&#x20;**<mark style="color:red;">**XSS**</mark>**&#x20;**<mark style="color:$info;">**?**</mark>
+
+Usually arise when JavaScript takes data from an attacker-controllable source, such as the URL, and passes it to a sink that supports dynamic code execution, such as eval() or innerHTML.
+
+DOM XSS occurs when JavaScript is used to change the page source through the `Document Object Model (DOM)`.
+
+The `Source` is the JavaScript object that takes the user input, and it can be any input parameter like a URL parameter or an input field, as we saw above.
+
+On the other hand, the `Sink` is the function that writes the user input to a DOM Object on the page. If the `Sink` function does not properly sanitize the user input, it would be vulnerable to an XSS attack. Some of the commonly used JavaScript functions to write to DOM objects are:
+
+* `document.write()`
+* `DOM.innerHTML`
+* `DOM.outerHTML`
+
+Furthermore, some of the `jQuery` library functions that write to DOM objects are:
+
+* `add()`
+* `after()`
+* `append()`
+
+If a `Sink` function writes the exact input without any sanitization (like the above functions), and no other means of sanitization were used, then we know that the page should be vulnerable to XSS.
+
+### <mark style="color:$primary;">**Common Entrypoints**</mark>
+
+*
+
+***
+
+<h2 align="center"><mark style="color:purple;">—————— EXPLOITATION ——————</mark></h2>
+
+## <mark style="color:yellow;background-color:$primary;">METHOD-1</mark> <mark style="color:$danger;">— URL Locations</mark>
+
+<figure><img src="../../../.gitbook/assets/image (4) (1).png" alt=""><figcaption></figcaption></figure>
+
+### <mark style="color:$warning;">At URL Fragment (anchor)</mark>
+
+When the page is rendered, the JavaScript code uses the current URL to retrieve the anchor portion of the URL (`#...`) and dynamically (on the client side) write it inside the page. This can be used to trigger a XSS vulnerability, if you use the payload as part of the URL. Since most browsers now encode the fragment, this vulnerable application decodes the fragment using the function `decodeURIComponent(...)`
+
+We see that the input parameter in the URL is using a hashtag `#` for the item we added, which means that this is a client-side parameter that is completely processed on the browser. This indicates that the input is being processed at the client-side through JavaScript and never reaches the back-end; hence it is a `DOM-based XSS`.
+
+#### <mark style="color:$primary;">PRE-REQs</mark>
+
+*
+
+#### <mark style="color:green;">EXPLOITATION</mark>
+
+*   Payload
+
+    ```javascript
+    #<script>alert(0)</script>      
+    // RELOAD THE PAGE to load the anchor again
+    ```
+* URL design\
+  ![](<../../../.gitbook/assets/image (5) (1).png>)
+* Injection point leading to XSS\
+  ![](<../../../.gitbook/assets/image (6) (1).png>)
+
+
+
+### <mark style="color:$warning;">At URL anchor</mark>
+
+
+
+#### <mark style="color:$primary;">PRE-REQs</mark>
+
+* Target Server- [http://localhost/](http://localhost/)
+* **ATTACKER SERVERS**
+  * _<mark style="color:red;">**If target file is known**</mark>_
+    1. Hosting DTD - [http://localhost:9001/serve.dtd](http://localhost:9001/serve.dtd) `(Python)`
+    2. Simple Data Exfiltration server - [http://localhost/logger.php?data=xyz](https://app.gitbook.com/o/KB8SS6L7SOu8VDgfWz7K/s/yIR6QEvLJIamE65k2AlI/) `(Nginx + PHP)`
+  *
+
+#### <mark style="color:green;">EXPLOITATION</mark>
+
+1. Specify the external DTD to be referenced along with the variable calls.
+
+
+
+
+
+
+
+
+
+* Adds param to URL anchor\
+  ![](<../../../.gitbook/assets/image (245).png>)
+* In `script.js` -
+
+```javascript
+$(function () {
+    $("#add").click(function () {
+        if ($("#task").val().length > 0) {
+            window.location.href = "#task=" + $("#task").val();
+            var pos = document.URL.indexOf("task=");
+            var task = document.URL.substring(pos + 5, document.URL.length);
+            document.getElementById("todo").innerHTML = "<b>Next Task:</b> " + decodeURIComponent(task);
+        }
+    });
+});
+var pos = document.URL.indexOf("task=");
+var task = document.URL.substring(pos + 5, document.URL.length);
+if (pos > 0) {
+    document.getElementById("todo").innerHTML = "<b>Next Task:</b> " + decodeURIComponent(task);
+}
+```
+
+* The input gets reflected in the page dynamically.\
+  <img src="../../../.gitbook/assets/image (246).png" alt="" data-size="original">
+* Payload — `<img src=x onerror=alert(document.cookie) />`
+
+{% hint style="info" %}
+`innerHTML` function does not allow the use of the `<script>` tags within it as a security feature! LOL
+{% endhint %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+***
+
+## <mark style="color:yellow;background-color:$primary;">METHOD-2</mark> <mark style="color:$danger;">— making</mark>&#x20;
+
+
+
+
+
+
+
+
+
+***
+
+<h2 align="center"><mark style="color:yellow;background-color:$primary;">FLASKY</mark> <mark style="color:red;">—</mark> <mark style="color:$danger;">Personal Lab</mark></h2>
+
+{% hint style="info" %}
+<mark style="color:orange;">**LAB**</mark>**&#x20;-** [https://github.com/dexter-11/Flasky/tree/main/XSS](https://github.com/dexter-11/Flasky/tree/main/XSS)
+{% endhint %}
+
+
+
+
+
+{% code overflow="wrap" %}
+```python
+var sanitized = DOMPurify.sanitize(s, {
+            ALLOWED_URI_REGEXP: /^(?:(?:https?):)/i,
+            RETURN_DOM: false,
+            RETURN_DOM_FRAGMENT: false
+        });
+        
+## CSP sources
+CSP_DEFAULT_SRC = ["'self'", 'https://identity.website.com']
+
+CSP_STYLE_SRC = ["'unsafe-inline'", "'self'", 'https://login.website.com', 'https://fonts.googleapis.com', 'https://ok1static.oktacdn.com', 'https://cdnjs.cloudflare.com', 'https://maxcdn.bootstrapcdn.com', 'https://portal-cdn.appdynamics.com']
+
+CSP_SCRIPT_SRC = ["'unsafe-inline'", "'unsafe-eval'", "'self'", 'https://login.website.com', 'https://cdn.segment.com', 'https://cdn.optimizely.com','https://cdn.jsdelivr.net', 'https://ajax.googleapis.com', 'https://www.google-analytics.com', 'https://www.googletagmanager.com', 'https://portal-cdn.website.com', 'https://code.jquery.com', 'https://munchkin.marketo.net', 'https://www.website.com', 'https://ok1static.oktacdn.com', 'https://*.smartlook.com', 'https://*.smartlook.cloud']
+
+CSP_FONT_SRC = ["'self'", 'https://fonts.gstatic.com', 'https://ok1static.oktacdn.com', 'https://cdnjs.cloudflare.com', 'https://maxcdn.bootstrapcdn.com', 'https://portal-cdn.website.com']
+
+CSP_CONNECT_SRC = ["'self'", 'https://identity.website.com', 'https://identity-api.website.com', 'https://cdn.segment.com', 'https://api.segment.io', 'https://www.google-analytics.com', 'https://stats.g.doubleclick.net', 'https://analytics.google.com', 'https://*.smartlook.com', 'https://*.smartlook.cloud']
+
+CSP_IMG_SRC = ["'self'", 'https://www.google-analytics.com', 'https://www.google.com', 'https://portal-cdn.website.com', 'https://ok1static.oktacdn.com']
+
+CSP_INCLUDE_NONCE_IN = ['script-src', 'style-src']
+```
+{% endcode %}
+
+
+
+
+
+
+
+
+
+
+
+
+
